@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>swarm-visualizer · tutorial</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .tutorial-video { width: 100%; max-width: 1280px; border-radius: 12px; border: 1px solid var(--line); display: block; background: #06091c; }
+    .steps { margin: 14px 0 0; padding: 0; list-style: none; }
+    .steps li { margin: 0 0 14px; padding-left: 34px; position: relative; }
+    .steps .n { position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 7px; background: var(--accent); color: #06102a; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+    .back-link { color: var(--accent); text-decoration: none; font-size: 13px; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <p class="kicker">after-run · lab only</p>
+      <h1>swarm-visualizer · tutorial</h1>
+    </div>
+    <a class="back-link" href="index.html">← back to visualizer</a>
+  </header>
+
+  <section class="panel">
+    <h2>How it works — the 60-second guide</h2>
+    <video class="tutorial-video" src="media/tutorial-explainer.mp4" controls playsinline preload="metadata"></video>
+    <p class="fine tight">Narrator voice: gemini-3.8-flash-tts (Puck), generated at build time. No model calls happen in the browser.</p>
+
+    <ol class="steps">
+      <li>
+        <span class="n">1</span>
+        <div><strong>The idea.</strong> Think of an AI security test as a team of robot scouts exploring a practice obstacle course. What you watch here is the <em>game tape</em>, replayed after a closed-lab run — zero live payloads, no real attacks in the browser. Every glowing dot is one worker agent moving through five color-coded checkpoints.</div>
+      </li>
+      <li>
+        <span class="n">2</span>
+        <div><strong>Read the colors, left to right.</strong> <em>HUMAN</em> (blue) is the starting instruction, <em>RECON</em> (cyan) maps the front doors, <em>SCOPE</em> (amber) checks what is inside the rules, <em>PROVEN-GATE</em> (red) is the strictest referee — hunches get stopped and verified — and <em>PUBLISH</em> (green) is where only verified findings score.</div>
+      </li>
+      <li>
+        <span class="n">3</span>
+        <div><strong>Drive it yourself.</strong> Pick any sanitized lab run (crAPI, Juice Shop, Vault Notes) from the Sample dropdown, press <em>Play with Narration</em> to hear the numbers, read the plain-English <em>Brief</em> on the right to see which stage worked hardest, or drop your own timeline JSON — the strict schema gate blocks anything unsafe instantly.</div>
+      </li>
+    </ol>
+
+    <p class="fine">Dots close together just mean two agents worked at the same time — not that they teamed up. Layer plot is not cause-and-effect. Attack engines stay on the offline lab machine; this site replays results only.</p>
+  </section>
+</body>
+</html>
