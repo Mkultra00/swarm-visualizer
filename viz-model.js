@@ -64,5 +64,88 @@
     return Math.min(1000, c + (1000 * dt) / pm);
   }
 
-  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY, layerX, markRadius, nextCursor };
+  function hudModel({ manifest, entry, run }) {
+    const r = run || {};
+    const frame = r.target_name || (entry && entry.frame) || "lab";
+    const exam = r.exam || "";
+    const stem = r.campaign_stem || "";
+    const runLabel = stem ? `${exam} · ${stem}` : exam;
+    let llm = "not in log";
+    if (entry && typeof entry.llm === "string" && entry.llm) llm = entry.llm;
+    else if (manifest && Array.isArray(manifest.runs)) {
+      const hit = manifest.runs.find((x) => x.id === r.campaign_stem);
+      if (hit && hit.llm) llm = hit.llm;
+    }
+    if (llm === "not in log" && r.agent_llm && A.isLabel(r.agent_llm)) llm = r.agent_llm;
+    return { frame, run: runLabel, llm };
+  }
+
+  const LAYER_EXPLAIN = Object.freeze({
+    human: "Start: the operator kicks off the lab run.",
+    recon: "Mapping: agents list what the practice app exposes.",
+    scope: "Scope: agents decide what is in bounds and what to look at next.",
+    "proven-gate": "Proof check: agents try to confirm a finding under the lab's own gate.",
+    publish: "Report: candidate or confirmed results get written up.",
+  });
+
+  const EXPLAINER = Object.freeze([
+    "Each row is one agent in the swarm. Each column is a stage, left to right: start, mapping, scope, proof check, report.",
+    "A dot appears when an agent logged an event in that stage. Bigger dots are report events.",
+    "A faint line joins one agent's own dots in time order, so you can follow that agent between stages. Lines never join two different agents.",
+    "Press Play to replay the whole run in 8 seconds, or in step with the narration. The counter shows how many events have happened so far.",
+    "Dots that are close in time don't mean agents were coordinating, and more dots don't mean a better run.",
+    "This is an after-run replay of a lab exam against a practice app on a lab machine. It shows no requests, payloads, findings or targets.",
+  ]);
+
+  function formatCell(key, value) {
+    if (key === "usd") {
+      if (value === null || value === undefined) return "";
+      if (value === 0) return "$0 API (compute not billed)";
+      return "$" + Number(value).toFixed(4);
+    }
+    if (key === "usd_per_verified") {
+      if (value === null || value === undefined) return "";
+      return "$" + Number(value).toFixed(4);
+    }
+    if (value === null || value === undefined) return "—";
+    if (key === "window_s" || key === "t_first_publish") return Number(value).toFixed(1);
+    return String(value);
+  }
+
+  function runRow({ entry, run, analysis, metrics, cost }) {
+    const hud = hudModel({ manifest: null, entry, run });
+    const href = "#run=" + encodeURIComponent(entry.id);
+    return {
+      frame: hud.frame,
+      run: analysis.run,
+      stem: analysis.stem,
+      events: analysis.events,
+      agents: analysis.agents,
+      window_s: metrics.window_s,
+      t_first_publish: metrics.t_first_publish,
+      endpoints: analysis.coverage.endpoints,
+      verified: analysis.coverage.verified,
+      llm: hud.llm,
+      usd: cost.usd,
+      usd_per_verified: cost.usd_per_verified,
+      href,
+    };
+  }
+
+  function parseRunHash(hash, manifest) {
+    if (typeof hash !== "string") return null;
+    const m = /^#run=([A-Za-z0-9_-]{1,32})$/.exec(hash);
+    if (!m || !manifest || !Array.isArray(manifest.runs)) return null;
+    return manifest.runs.find((r) => r.id === m[1]) || null;
+  }
+
+  function narrationPlayMs(sidecar) {
+    const n = sidecar && sidecar.duration_ms;
+    return Number.isInteger(n) && n >= 1000 && n <= 120000 ? n : 8000;
+  }
+
+  return {
+    LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY, layerX, markRadius, nextCursor,
+    hudModel, runRow, formatCell, parseRunHash, LAYER_EXPLAIN, EXPLAINER, narrationPlayMs,
+  };
 });

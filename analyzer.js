@@ -167,7 +167,7 @@
     const ts = events.map((e) => e._t);
     const span_s = events.length < 2 ? 0 : (Math.max(...ts) - Math.min(...ts)) / 1000;
     const warnings = [];
-    if (typeof run.event_count === "number" && run.event_count !== events.length) {
+    if (run && typeof run.event_count === "number" && run.event_count !== events.length) {
       warnings.push(`event_count ${run.event_count} does not match ${events.length} events`);
     }
     return {
@@ -207,5 +207,80 @@
       ` AGENT LLM ${a.llm}. After-run lab exam; layer plot is not cause-and-effect.`;
   }
 
-  return { parseTs, validateTimeline, analyze, brief, scanForbidden, isLabel, LAYERS };
+  function isGeminiWorker(id) {
+    if (typeof id !== "string") return false;
+    const s = id.trim();
+    if (!s || /^gemini$/i.test(s) || s === "not in log") return false;
+    return /^gemini-[a-z0-9][a-z0-9.\-:]*$/i.test(s);
+  }
+
+  function runMetrics(run, analysis) {
+    const events = (run && Array.isArray(run.events)) ? run.events : [];
+    const started = parseTs(run && run.started_at);
+    const firstLayer = (name) => {
+      const ev = events.find((e) => e.layer === name);
+      if (!ev || Number.isNaN(started)) return null;
+      return (ev._t - started) / 1000;
+    };
+    const n = analysis.events;
+    const window_s = analysis.window_s;
+    const layerShare = {};
+    for (const l of LAYERS) layerShare[l] = n ? (analysis.byLayer[l] || 0) / n : 0;
+    const c = analysis.coverage || {};
+    return {
+      window_s,
+      t_first_publish: firstLayer("publish"),
+      t_first_proven_gate: firstLayer("proven-gate"),
+      events: n,
+      agents: analysis.agents,
+      events_per_min: window_s ? n / (window_s / 60) : null,
+      layerShare,
+      coverage: {
+        endpoints: c.endpoints, findings: c.findings, verified: c.verified,
+        unverified: c.unverified, reached: c.reached, blocked: c.blocked,
+      },
+    };
+  }
+
+  function costOf(run, entry, verified) {
+    const c = run && isObj(run.cost) ? run.cost : null;
+    const tokens_in = c && typeof c.tokens_in === "number" ? c.tokens_in : null;
+    const tokens_out = c && typeof c.tokens_out === "number" ? c.tokens_out : null;
+    let usd = null;
+    let basis = null;
+    if (c && typeof c.usd === "number" && Number.isFinite(c.usd)) {
+      usd = c.usd;
+      basis = "log";
+    } else if (entry && entry.billing === "local") {
+      usd = 0;
+      basis = "local-not-billed";
+    }
+    const usd_per_verified = usd !== null && typeof verified === "number" && verified > 0 ? usd / verified : null;
+    return { tokens_in, tokens_out, usd, usd_per_verified, basis };
+  }
+
+  function narrationScript(analysis, metrics) {
+    const llmSpoken = analysis.llm === "not in log" ? "not recorded in the log" : analysis.llm;
+    if (!analysis.events) {
+      return `${analysis.frame}, ${analysis.run}. After-run lab exam with no events. The agent LLM for this run was ${llmSpoken}.`;
+    }
+    const win = metrics.window_s == null ? "" : ` over a ${metrics.window_s.toFixed(0)}-second window`;
+    const first = metrics.t_first_publish == null ? "" : ` The first publish came ${metrics.t_first_publish.toFixed(0)} seconds in.`;
+    const c = analysis.coverage || {};
+    const speak = (v) => (v === null || v === undefined ? "not recorded" : String(v));
+    const findings = (c.findings === null || c.findings === undefined) ? "not recorded findings" : plural(c.findings, "finding");
+    const nBusy = analysis.busiestLayer ? analysis.byLayer[analysis.busiestLayer] : 0;
+    return `${analysis.frame}, ${analysis.run}. This is an after-run replay of a lab exam, not a live attack. ` +
+      `The agent LLM for this run was ${llmSpoken}. ` +
+      `${plural(analysis.agents, "agent")} produced ${plural(analysis.events, "event")}${win}. ` +
+      `Each row is one agent; each column is a stage, from human on the left to publish on the right. ` +
+      `Most activity was in the ${analysis.busiestLayer} stage, with ${nBusy} events.` +
+      `${first} Coverage: ${speak(c.endpoints)} endpoints, ${findings}, ${speak(c.verified)} verified. ` +
+      `Nearby dots are not proof that the agents coordinated.`;
+  }
+
+  return {
+    parseTs, validateTimeline, analyze, brief, scanForbidden, isLabel, LAYERS,
+    isGeminiWorker, runMetrics, costOf, narrationScript,
+  };
 });

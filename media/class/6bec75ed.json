@@ -1,0 +1,7 @@
+{
+  "schema": "swarm-visualizer/class/v1",
+  "run_id": "6bec75ed",
+  "model": "gemini-decision-1",
+  "label": "reached",
+  "reason": "choice reached 0.96"
+}

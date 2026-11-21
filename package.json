@@ -1,5 +1,5 @@
 {
   "name": "swarm-visualizer",
   "private": true,
-  "scripts": { "test": "node --test tests/" }
+  "scripts": { "test": "node --test tests/*.test.js" }
 }

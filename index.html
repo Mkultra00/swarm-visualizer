@@ -25,9 +25,39 @@
     </label>
     <button id="play" type="button">Play</button>
     <input id="scrub" type="range" min="0" max="1000" value="0" />
+    <button id="play-narration" type="button" hidden>Play with narration</button>
     <label class="drop">Drop JSON
       <input id="file" type="file" accept="application/json,.json" />
     </label>
+  </section>
+
+  <section id="viz-wrap">
+    <canvas id="viz" width="1200" height="720"></canvas>
+    <p id="voice-credit" class="fine" hidden>Narrator voice: gemini-3.8-flash-tts, reading the numbers above after the run. The narrator did not run this exam.</p>
+    <audio id="narration-audio" hidden></audio>
+    <pre id="transcript" class="transcript" hidden></pre>
+  </section>
+
+  <section id="explain" class="panel wide">
+    <h2>What you're seeing</h2>
+    <ul id="explainer"></ul>
+    <dl id="layer-legend"></dl>
+  </section>
+
+  <section id="runs" class="panel wide">
+    <h2>Table of outputs</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>FRAME</th><th>RUN</th><th>stem</th><th>events</th><th>agents</th>
+            <th>window_s</th><th>t_first_publish</th><th>endpoints</th><th>verified</th>
+            <th>AGENT LLM</th><th>CLASS</th><th>usd</th><th>usd / verified</th><th>viz</th>
+          </tr>
+        </thead>
+        <tbody id="runs-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <main>
@@ -40,11 +70,12 @@
       <div id="by-layer" class="bars"></div>
       <h3>By agent</h3>
       <div id="by-agent" class="bars"></div>
-      <p class="fine">Sanitized schema. No payloads. Attack engines stay on the lab box.</p>
+      <p class="fine">Sanitized schema. No payloads. Attack engines stay on the lab box. Layer plot is not cause-and-effect.</p>
     </aside>
-    <canvas id="viz" width="1200" height="720"></canvas>
   </main>
 
+  <script src="analyzer.js"></script>
+  <script src="viz-model.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
