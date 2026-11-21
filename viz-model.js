@@ -46,5 +46,16 @@
     return 60 + (i * (h - 100)) / (n - 1);
   }
 
-  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY };
+  // Column x for a layer; null for off-layer events (never drawn in the human column).
+  function layerX(layer, w) {
+    const i = LAYERS.indexOf(layer);
+    if (i < 0) return null;
+    return 80 + (i * (w - 120)) / (LAYERS.length - 1);
+  }
+
+  function markRadius(ev) {
+    return ev && ev.status === "publish" ? 6 : 4;
+  }
+
+  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY, layerX, markRadius };
 });

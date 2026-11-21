@@ -49,3 +49,16 @@ test("laneY", () => {
   assert.equal(V.laneY(7, 8, 720), 680);
   assert.ok(Math.abs(V.laneY(1, 8, 720) - (60 + 620 / 7)) < 1e-9);
 });
+
+// ---- T11 layerX / off-layer ----
+test("layerX columns; unknown layers are not drawn", () => {
+  assert.equal(V.layerX("human", 1200), 80);
+  assert.equal(V.layerX("publish", 1200), 1160);
+  assert.equal(V.layerX("scope", 1200), 620);
+  assert.equal(V.layerX("bogus", 1200), null);
+  assert.equal(V.layerX(undefined, 1200), null);
+});
+test("markRadius", () => {
+  assert.equal(V.markRadius({ status: "publish" }), 6);
+  assert.equal(V.markRadius({ status: "call", layer: "publish" }), 4);
+});
