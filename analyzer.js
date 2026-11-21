@@ -190,5 +190,22 @@
     };
   }
 
-  return { parseTs, validateTimeline, analyze, scanForbidden, isLabel, LAYERS };
+  const plural = (n, word) => `${n} ${n === 1 ? word : word + "s"}`;
+  const dash = (v) => (v === null || v === undefined ? "—" : String(v));
+  const pluralOrDash = (n, word) => (n === null || n === undefined ? `— ${word}s` : plural(n, word));
+
+  // brief(analysis) → one paragraph from a fixed template (§3.4). Numbers and run labels only.
+  function brief(a) {
+    const head = `${a.frame} / ${a.run}`;
+    if (!a.events) return `${head}: no events. AGENT LLM ${a.llm}. After-run lab exam.`;
+    const stem = a.stem ? ` (${a.stem})` : "";
+    const win = a.window_s === null || a.window_s === undefined ? "" : ` in a ${a.window_s.toFixed(1)} s window`;
+    const busy = a.busiestLayer ? ` Busiest layer ${a.busiestLayer} (${a.byLayer[a.busiestLayer]}).` : "";
+    const c = a.coverage || {};
+    return `${head}${stem}: ${plural(a.events, "event")} from ${plural(a.agents, "agent")} over ${a.span_s.toFixed(1)} s${win}.` +
+      `${busy} Coverage: ${dash(c.endpoints)} endpoints, ${pluralOrDash(c.findings, "finding")}, ${dash(c.verified)} verified.` +
+      ` AGENT LLM ${a.llm}. After-run lab exam; layer plot is not cause-and-effect.`;
+  }
+
+  return { parseTs, validateTimeline, analyze, brief, scanForbidden, isLabel, LAYERS };
 });
