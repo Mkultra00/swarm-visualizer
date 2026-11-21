@@ -1,0 +1,41 @@
+{
+  "schema": "swarm-visualizer/manifest/v1",
+  "note": "LLM is the worker from that run. Do not label these Gemini.",
+  "runs": [
+    {
+      "id": "7b5ee689",
+      "file": "data/runs/7b5ee689.json",
+      "frame": "Vault Notes",
+      "run": "exam 7",
+      "llm": "glm-5.3:cloud"
+    },
+    {
+      "id": "7c2756ff",
+      "file": "data/runs/7c2756ff.json",
+      "frame": "Vault Notes",
+      "run": "exam 8",
+      "llm": "glm-5.3:cloud"
+    },
+    {
+      "id": "28bdd7b7",
+      "file": "data/runs/28bdd7b7.json",
+      "frame": "Vault Notes",
+      "run": "exam 9",
+      "llm": "glm-5.3:cloud"
+    },
+    {
+      "id": "7eaf9541",
+      "file": "data/runs/7eaf9541.json",
+      "frame": "Juice Shop",
+      "run": "juiceshop",
+      "llm": "gpt-oss:20b"
+    },
+    {
+      "id": "6bec75ed",
+      "file": "data/runs/6bec75ed.json",
+      "frame": "crAPI",
+      "run": "crapi-1",
+      "llm": "gpt-oss:20b"
+    }
+  ]
+}

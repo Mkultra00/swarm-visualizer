@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>swarm-visualizer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>swarm-visualizer</h1>
+      <p class="tag">After-run analyzer. Lab timelines only. No exploits.</p>
+    </div>
+    <div class="hud" id="hud">
+      <div><span>FRAME</span><strong id="hud-frame">—</strong></div>
+      <div><span>RUN</span><strong id="hud-run">—</strong></div>
+      <div><span>AGENT LLM</span><strong id="hud-llm">not in log</strong></div>
+    </div>
+  </header>
+
+  <section class="controls">
+    <label>Sample
+      <select id="run-select"></select>
+    </label>
+    <button id="play" type="button">Play</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" />
+    <label class="drop">Drop JSON
+      <input id="file" type="file" accept="application/json,.json" />
+    </label>
+  </section>
+
+  <main>
+    <aside id="brief" class="panel">
+      <h2>Brief</h2>
+      <p id="brief-text">Load a run.</p>
+      <h2>Analyzer</h2>
+      <dl id="stats"></dl>
+      <h3>By layer</h3>
+      <div id="by-layer" class="bars"></div>
+      <h3>By agent</h3>
+      <div id="by-agent" class="bars"></div>
+      <p class="fine">Sanitized schema. No payloads. Attack engines stay on the lab box.</p>
+    </aside>
+    <canvas id="viz" width="1200" height="720"></canvas>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
