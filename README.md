@@ -27,7 +27,7 @@ Open `index.html` or GitHub Pages. Pick a sample, or drop a sanitized timeline J
 
 ```bash
 python3 -m http.server 8767
-# http://127.0.0.1:8767/
+# http://localhost:8767/
 ```
 
 ## Layout

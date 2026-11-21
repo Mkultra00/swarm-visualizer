@@ -8,3 +8,9 @@ gemini*.env
 *.mp4
 .idea/
 .vscode/
+
+# operator-only material, never committed
+inputs/
+.env*
+*.pem
+*.key
