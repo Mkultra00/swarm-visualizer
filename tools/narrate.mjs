@@ -49,7 +49,7 @@ async function main() {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: "Read this text verbatim. Add nothing.\n" + script_text }] }],
+      contents: [{ role: "user", parts: [{ text: script_text }] }],
       generationConfig: {
         responseModalities: ["AUDIO"],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
