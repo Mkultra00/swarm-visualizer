@@ -37,3 +37,15 @@ test("visibleAt inclusive cutoff with shared ts, keeps order", () => {
   const ev = [{ _t: 1, id: "a" }, { _t: 5, id: "b" }, { _t: 5, id: "c" }, { _t: 9, id: "d" }];
   assert.deepEqual(V.visibleAt(ev, 5).map((e) => e.id), ["a", "b", "c"]);
 });
+
+// ---- T10 stable lanes ----
+test("laneOrder: first appearance over the full run", () => {
+  assert.deepEqual(V.laneOrder(crapi().events), ["engine", "memory", "classifier", "orchestrator", "recon", "exploit", "scheduler", "report"]);
+  assert.equal(V.laneOrder.length, 1); // takes the full event list only, no cursor
+});
+test("laneY", () => {
+  assert.equal(V.laneY(0, 1, 720), 360);
+  assert.equal(V.laneY(0, 8, 720), 60);
+  assert.equal(V.laneY(7, 8, 720), 680);
+  assert.ok(Math.abs(V.laneY(1, 8, 720) - (60 + 620 / 7)) < 1e-9);
+});

@@ -32,5 +32,19 @@
     return events.filter((e) => e._t <= cutoffMs);
   }
 
-  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt };
+  // Distinct agent ids in first-appearance order over the FULL run, so lanes never jump during play.
+  function laneOrder(events) {
+    const seen = [];
+    const set = new Set();
+    for (const e of events) if (!set.has(e.agent_id)) { set.add(e.agent_id); seen.push(e.agent_id); }
+    return seen;
+  }
+
+  // Lane i of n on a canvas of height h: centred when n === 1, else evenly from 60 to h−40.
+  function laneY(i, n, h) {
+    if (n <= 1) return h / 2;
+    return 60 + (i * (h - 100)) / (n - 1);
+  }
+
+  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY };
 });
