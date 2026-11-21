@@ -185,8 +185,20 @@
       if (r.ok) sc = await r.json();
     } catch (_) { /* no sidecar */ }
     setSidecar(sc && sc.schema === "swarm-visualizer/narration/v1" ? sc : null);
+    setGourceClip(entry.id);
     if (location.hash !== "#run=" + entry.id) history.replaceState(null, "", "#run=" + entry.id);
     $("viz-wrap").scrollIntoView({ block: "start" });
+  }
+
+  function setGourceClip(id) {
+    const v = $("gource");
+    if (!id) {
+      v.removeAttribute("src");
+      v.load();
+      return;
+    }
+    v.src = "media/gource/" + id + ".mp4";
+    v.load();
   }
 
   function tick(now) {
@@ -220,6 +232,11 @@
       state.playMs = 8000;
       stopAudio();
     }
+    const clip = $("gource");
+    if (clip.getAttribute("src")) {
+      clip.currentTime = 0;
+      clip.play().catch(() => {});
+    }
     requestAnimationFrame(tick);
   }
 
@@ -227,6 +244,7 @@
     state.playing = false;
     $("play").textContent = "Play";
     $("narration-audio").pause();
+    $("gource").pause();
   }
 
   function fillExplainer() {

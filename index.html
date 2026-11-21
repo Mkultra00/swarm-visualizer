@@ -7,44 +7,58 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <div>
+  <header class="topbar">
+    <div class="brand">
+      <p class="kicker">after-run · lab only</p>
       <h1>swarm-visualizer</h1>
-      <p class="tag">After-run analyzer. Lab timelines only. No exploits.</p>
     </div>
     <div class="hud" id="hud">
-      <div><span>FRAME</span><strong id="hud-frame">—</strong></div>
-      <div><span>RUN</span><strong id="hud-run">—</strong></div>
-      <div><span>AGENT LLM</span><strong id="hud-llm">not in log</strong></div>
+      <div class="chip"><span>FRAME</span><strong id="hud-frame">—</strong></div>
+      <div class="chip"><span>RUN</span><strong id="hud-run">—</strong></div>
+      <div class="chip"><span>AGENT LLM</span><strong id="hud-llm">not in log</strong></div>
     </div>
   </header>
 
-  <section class="controls">
-    <label>Sample
-      <select id="run-select"></select>
-    </label>
-    <button id="play" type="button">Play</button>
-    <input id="scrub" type="range" min="0" max="1000" value="0" />
-    <button id="play-narration" type="button" hidden>Play with narration</button>
-    <label class="drop">Drop JSON
-      <input id="file" type="file" accept="application/json,.json" />
-    </label>
-  </section>
+  <div class="stage">
+    <section id="viz-wrap">
+      <video id="gource" playsinline controls preload="metadata"></video>
+      <canvas id="viz" width="1440" height="780" hidden></canvas>
+      <div class="player">
+        <label class="sample">Sample
+          <select id="run-select"></select>
+        </label>
+        <button id="play" type="button" class="btn">Play</button>
+        <input id="scrub" type="range" min="0" max="1000" value="0" />
+        <button id="play-narration" type="button" class="btn primary" hidden>Play with narration</button>
+        <label class="drop">Drop JSON
+          <input id="file" type="file" accept="application/json,.json" />
+        </label>
+      </div>
+      <p id="voice-credit" class="fine" hidden>Narrator voice: gemini-3.8-flash-tts, reading the numbers above after the run. The narrator did not run this exam.</p>
+      <audio id="narration-audio" hidden></audio>
+      <pre id="transcript" class="transcript" hidden></pre>
+    </section>
 
-  <section id="viz-wrap">
-    <canvas id="viz" width="1200" height="720"></canvas>
-    <p id="voice-credit" class="fine" hidden>Narrator voice: gemini-3.8-flash-tts, reading the numbers above after the run. The narrator did not run this exam.</p>
-    <audio id="narration-audio" hidden></audio>
-    <pre id="transcript" class="transcript" hidden></pre>
-  </section>
+    <aside id="brief" class="rail">
+      <h2>Brief</h2>
+      <p id="brief-text">Load a run.</p>
+      <h2>Analyzer</h2>
+      <dl id="stats"></dl>
+      <h3>By layer</h3>
+      <div id="by-layer" class="bars"></div>
+      <h3>By agent</h3>
+      <div id="by-agent" class="bars"></div>
+      <p class="fine tight">Sanitized schema. No payloads. Attack engines stay on the lab box. Layer plot is not cause-and-effect.</p>
+    </aside>
+  </div>
 
-  <section id="explain" class="panel wide">
+  <section id="explain" class="panel">
     <h2>What you're seeing</h2>
     <ul id="explainer"></ul>
     <dl id="layer-legend"></dl>
   </section>
 
-  <section id="runs" class="panel wide">
+  <section id="runs" class="panel">
     <h2>Table of outputs</h2>
     <div class="table-wrap">
       <table>
@@ -59,20 +73,6 @@
       </table>
     </div>
   </section>
-
-  <main>
-    <aside id="brief" class="panel">
-      <h2>Brief</h2>
-      <p id="brief-text">Load a run.</p>
-      <h2>Analyzer</h2>
-      <dl id="stats"></dl>
-      <h3>By layer</h3>
-      <div id="by-layer" class="bars"></div>
-      <h3>By agent</h3>
-      <div id="by-agent" class="bars"></div>
-      <p class="fine">Sanitized schema. No payloads. Attack engines stay on the lab box. Layer plot is not cause-and-effect.</p>
-    </aside>
-  </main>
 
   <script src="analyzer.js"></script>
   <script src="viz-model.js"></script>

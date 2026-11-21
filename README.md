@@ -10,7 +10,7 @@ Built for **Gemini 4 NYC** (2026-11-21). Attack engines stay on the lab Mac. Thi
 
 Pick a sample (or drop a `chan-sim-timeline/v1` JSON). The page:
 
-1. **Visualizes** the run as a layered swarm (FRAME / RUN / AGENT LLM HUD)
+1. **Visualizes** the run as a Gource tree clip (FRAME / RUN / AGENT LLM HUD)
 2. **Tables** one row per sample (events, window, coverage, class, cost)
 3. **Briefs** one paragraph from the numbers — no payloads, no how-to
 4. **Narrates** with a Gemini TTS sidecar when present (`gemini-3.8-flash-tts`)
@@ -43,7 +43,7 @@ HUD LLM is the worker **from that run's log**. Do not stamp Gemini on these base
 
 ```bash
 python3 -m http.server 8767
-# http://127.0.0.1:8767/
+# then open localhost port 8767 in a browser
 ```
 
 ```bash

@@ -6,6 +6,7 @@ node_modules/
 auth.json
 gemini*.env
 *.mp4
+!media/gource/*.mp4
 .idea/
 .vscode/
 
