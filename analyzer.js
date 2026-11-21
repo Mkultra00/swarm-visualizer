@@ -119,5 +119,76 @@
     return { ok: true, errors, warnings, run };
   }
 
-  return { parseTs, validateTimeline, scanForbidden, isLabel, LAYERS };
+  // Counts by key, insertion order = first appearance. Missing → `fallback`.
+  function countBy(rows, key, fallback) {
+    const m = {};
+    for (const r of rows) {
+      const v = r[key];
+      const k = v === null || v === undefined || v === "" ? fallback : String(v);
+      m[k] = (m[k] || 0) + 1;
+    }
+    return m;
+  }
+
+  const COVERAGE_KEYS = Object.freeze([
+    ["endpoints", "Endpoints"], ["findings", "TotalFindings"], ["verified", "Verified"],
+    ["unverified", "Unverified"], ["confidence", "Confidence"], ["reached", "Reached"], ["blocked", "Blocked"],
+  ]);
+
+  function coverageOf(cov) {
+    const out = {};
+    for (const [k, src] of COVERAGE_KEYS) {
+      const raw = isObj(cov) ? (src in cov ? cov[src] : cov[k]) : undefined;
+      const ok = (typeof raw === "number" && Number.isFinite(raw)) || typeof raw === "boolean" || isLabel(raw);
+      out[k] = ok ? raw : null;
+    }
+    return out;
+  }
+
+  function windowOf(run) {
+    const a = parseTs(run.started_at);
+    const b = parseTs(run.window_end_at);
+    return Number.isNaN(a) || Number.isNaN(b) ? null : (b - a) / 1000;
+  }
+
+  // analyze(run, llmLabel) → Analysis (§3.3). `run` is a normalized run from validateTimeline.
+  function analyze(run, llmLabel) {
+    const events = (run && Array.isArray(run.events)) ? run.events : [];
+    const byLayer = {};
+    for (const l of LAYERS) byLayer[l] = 0;
+    let offLayer = 0;
+    for (const e of events) {
+      if (LAYERS.includes(e.layer)) byLayer[e.layer] += 1;
+      else offLayer += 1;
+    }
+    if (offLayer) byLayer.unknown = offLayer;
+    let busiestLayer = null;
+    for (const l of LAYERS) if (byLayer[l] > 0 && (busiestLayer === null || byLayer[l] > byLayer[busiestLayer])) busiestLayer = l;
+    const ts = events.map((e) => e._t);
+    const span_s = events.length < 2 ? 0 : (Math.max(...ts) - Math.min(...ts)) / 1000;
+    const warnings = [];
+    if (typeof run.event_count === "number" && run.event_count !== events.length) {
+      warnings.push(`event_count ${run.event_count} does not match ${events.length} events`);
+    }
+    return {
+      frame: run.target_name || "lab",
+      run: run.exam || "run",
+      stem: run.campaign_stem || "",
+      llm: llmLabel || "not in log",
+      events: events.length,
+      agents: new Set(events.map((e) => e.agent_id)).size,
+      span_s,
+      window_s: windowOf(run),
+      coverage: coverageOf(run.coverage),
+      byLayer,
+      byAgent: countBy(events, "agent_id", "unknown"),
+      byStatus: countBy(events, "status", "unknown"),
+      byFindingClass: countBy(events, "finding_class", "none"),
+      offLayer,
+      busiestLayer,
+      warnings,
+    };
+  }
+
+  return { parseTs, validateTimeline, analyze, scanForbidden, isLabel, LAYERS };
 });
