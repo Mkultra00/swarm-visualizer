@@ -14,6 +14,7 @@ This project does **not** perform a pentest, and it does **not** run the agentic
 - A full simulation run takes **hours**. Nothing in this repo launches or replays live attacks — the engines stay on the offline lab machine.
 - The **front-end visualizer and analyzer** (this entire repo) were **built during the hackathon**.
 - Gemini models were used **inside the simulation, offline, only to get the data** that is fed to the analyzer — sanitized timelines exported to `data/runs/*.json`. No model calls happen in the browser.
+- Narration on the demo and tutorial videos also uses the **Gemini voice model** (Gemini TTS, `gemini-3.8-flash-tts`, voice Puck) — again generated at build time, spoken audio only.
 
 ## What it is
 
