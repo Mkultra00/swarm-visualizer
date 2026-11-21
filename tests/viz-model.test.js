@@ -62,3 +62,13 @@ test("markRadius", () => {
   assert.equal(V.markRadius({ status: "publish" }), 6);
   assert.equal(V.markRadius({ status: "call", layer: "publish" }), 4);
 });
+
+// ---- T12 time-based playback ----
+test("nextCursor is frame-rate independent", () => {
+  assert.equal(V.nextCursor(0, 8000), 1000);
+  assert.ok(Math.abs(V.nextCursor(0, 16.67) - 2.08375) < 1e-9);
+  assert.equal(V.nextCursor(990, 1000), 1000);
+  assert.equal(V.nextCursor(0, 4000, 4000), 1000);
+  assert.equal(V.nextCursor(0, 2000, 4000), 500);
+  assert.equal(V.nextCursor(100, -50), 100); // a negative dt never rewinds
+});

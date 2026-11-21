@@ -57,5 +57,12 @@
     return ev && ev.status === "publish" ? 6 : 4;
   }
 
-  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY, layerX, markRadius };
+  // Advance the 0..1000 cursor by elapsed wall time; a full play lasts playMs on any refresh rate.
+  function nextCursor(c, dtMs, playMs) {
+    const pm = Number.isFinite(playMs) && playMs > 0 ? playMs : 8000;
+    const dt = Number.isFinite(dtMs) && dtMs > 0 ? dtMs : 0;
+    return Math.min(1000, c + (1000 * dt) / pm);
+  }
+
+  return { LAYERS, LAYER_COLOR, cursorToTime, visibleAt, laneOrder, laneY, layerX, markRadius, nextCursor };
 });
