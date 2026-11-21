@@ -6,21 +6,21 @@
       "id": "7b5ee689",
       "file": "data/runs/7b5ee689.json",
       "frame": "Vault Notes",
-      "run": "exam 7",
+      "run": "vaultnotes-7",
       "llm": "glm-5.3:cloud"
     },
     {
       "id": "7c2756ff",
       "file": "data/runs/7c2756ff.json",
       "frame": "Vault Notes",
-      "run": "exam 8",
+      "run": "vaultnotes-8",
       "llm": "glm-5.3:cloud"
     },
     {
       "id": "28bdd7b7",
       "file": "data/runs/28bdd7b7.json",
       "frame": "Vault Notes",
-      "run": "exam 9",
+      "run": "vaultnotes-9",
       "llm": "glm-5.3:cloud"
     },
     {
