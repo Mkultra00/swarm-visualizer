@@ -6,6 +6,15 @@ Live: [https://mkultra00.github.io/swarm-visualizer/](https://mkultra00.github.i
 
 Built for **Gemini 4 NYC** (2026-11-21). Attack engines stay on the lab Mac. This repo is the public website only.
 
+## What this repo does NOT do
+
+This project does **not** perform a pentest, and it does **not** run the agentic swarm pentest simulation.
+
+- The simulation runs are built on **two other open-source repos, forked privately** — e.g. **ARTEX** ([BaaRai/ARTEX](https://github.com/BaaRai/ARTEX), AI autonomous pentest system) and **Pentest-Swarm-AI** ([Armur-Ai/Pentest-Swarm-AI](https://github.com/Armur-Ai/Pentest-Swarm-AI), swarm orchestrator). Those forked repos are **private**, so they are not hosted here.
+- A full simulation run takes **hours**. Nothing in this repo launches or replays live attacks — the engines stay on the offline lab machine.
+- The **front-end visualizer and analyzer** (this entire repo) were **built during the hackathon**.
+- Gemini models were used **inside the simulation, offline, only to get the data** that is fed to the analyzer — sanitized timelines exported to `data/runs/*.json`. No model calls happen in the browser.
+
 ## What it is
 
 Pick a sample (or drop a `chan-sim-timeline/v1` JSON). The page:
