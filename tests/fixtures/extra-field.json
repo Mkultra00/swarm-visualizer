@@ -1,0 +1,54 @@
+{
+  "schema": "chan-sim-timeline/v1",
+  "exam": "tiny-extra",
+  "campaign_stem": "tiny0001",
+  "target_name": "Tiny Lab",
+  "started_at": "2026-01-01T00:00:00Z",
+  "window_end_at": "2026-01-01T00:01:00Z",
+  "sanitize": "hand-built fixture, no payloads",
+  "coverage": {
+    "Reached": true,
+    "Blocked": false,
+    "Endpoints": 2,
+    "TotalFindings": 0,
+    "Verified": 0,
+    "Unverified": 0,
+    "Confidence": "low"
+  },
+  "event_count": 4,
+  "events": [
+    {
+      "ts": "2026-01-01T00:00:30Z",
+      "agent_id": "beta",
+      "role": "recon",
+      "layer": "recon",
+      "status": "call",
+      "finding_class": null,
+      "payload": "x"
+    },
+    {
+      "ts": "2026-01-01T00:00:10Z",
+      "agent_id": "alpha",
+      "role": "human",
+      "layer": "human",
+      "status": "started",
+      "finding_class": null
+    },
+    {
+      "ts": "2026-01-01T00:00:30Z",
+      "agent_id": "alpha",
+      "role": "scope",
+      "layer": "scope",
+      "status": "state",
+      "finding_class": null
+    },
+    {
+      "ts": "2026-01-01T00:00:40.5Z",
+      "agent_id": "beta",
+      "role": "recon",
+      "layer": "lounge",
+      "status": "call",
+      "finding_class": "misc"
+    }
+  ]
+}
