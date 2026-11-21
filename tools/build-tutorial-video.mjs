@@ -109,10 +109,25 @@ async function capture() {
   fs.mkdirSync(FR);
   const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--autoplay-policy=no-user-gesture-required", "--hide-scrollbars"] });
   const page = await browser.newPage();
-  await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1.5 });
+  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
   await page.goto(URL_BASE, { waitUntil: "networkidle0" });
   await page.evaluate(() => window.scrollTo(0, 0));
   await new Promise((r) => setTimeout(r, 2000));
+  // HERO MODE (s1+s2): the visualizer IS the screen — the LIVE canvas swarm (not the
+  // 1280x720 gource clip) full-bleed 1920x980 at 1:1 pixels; every competing element hidden.
+  await page.evaluate(() => {
+    const viz = document.getElementById("viz");
+    viz.setAttribute("width", "1920"); viz.setAttribute("height", "980");
+    const st = document.createElement("style");
+    st.id = "tut-hero";
+    st.textContent = ".topbar,#brief,#explain,#runs,#voice-credit,#transcript,video#gource,.player{display:none!important}" +
+      "body{margin:0!important;background:#05060a;overflow:hidden!important}" +
+      "#viz-wrap{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1}" +
+      "canvas#viz{display:block!important;width:1920px!important;height:980px!important;max-height:none!important;max-width:none!important}";
+    document.head.appendChild(st);
+    return true;
+  });
+  await new Promise((r) => setTimeout(r, 400));
 
   const cdp = await page.target().createCDPSession();
   const frames = [];
@@ -148,12 +163,12 @@ async function capture() {
   const chipsInjectFired = await page.evaluate((names, colors) => {
     const d = document.createElement("div");
     d.id = "tut-chips";
-    d.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:18px;z-index:99;background:rgba(5,6,10,.58);padding:9px 18px;border-radius:10px;border:1px solid rgba(110,231,255,.25)";
+    d.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:26px;z-index:99;background:rgba(5,6,10,.62);padding:12px 26px;border-radius:12px;border:1px solid rgba(110,231,255,.3)";
     names.forEach((n, i) => {
       const c = document.createElement("span");
-      c.style.cssText = `display:flex;align-items:center;gap:7px;color:${colors[i]};font:700 13px ui-sans-serif,Helvetica;letter-spacing:.09em`;
+      c.style.cssText = `display:flex;align-items:center;gap:9px;color:${colors[i]};font:700 21px ui-sans-serif,Helvetica;letter-spacing:.09em`;
       const dot = document.createElement("i");
-      dot.style.cssText = `width:9px;height:9px;border-radius:50%;background:${colors[i]};display:inline-block`;
+      dot.style.cssText = `width:13px;height:13px;border-radius:50%;background:${colors[i]};display:inline-block`;
       c.appendChild(dot);
       c.appendChild(document.createTextNode(n));
       d.appendChild(c);
@@ -164,12 +179,21 @@ async function capture() {
   rects.chips = await page.evaluate(() => [...document.querySelectorAll("#tut-chips span")].map((c) => { const b = c.getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; }));
   await at(1.9);
   rects.play = await rect("#play");
-  await page.click("#play");
+  await page.evaluate(() => document.getElementById("play").click()); // .player is hero-hidden; JS click still fires
   // s2: five-color tour — chips flash one by one over the still-playing run.
   const slots = (L.s2 - 1.5) / 5;
   rects.chipWins = STAGES.map((_, i) => [s2 + 1.5 + i * slots, s2 + 1.5 + (i + 1) * slots - 0.06]);
   await at(s3);
-  // s3: the controls — sample menu, scrubber, drop JSON, then the Brief.
+  // Layout restore: back to the real app grid for the controls tour; re-measure the select box.
+  await page.evaluate(() => {
+    document.getElementById("tut-hero")?.remove();
+    document.getElementById("tut-chips")?.remove(); // stop the tour legend from doubling the native topbar legend
+    const viz = document.getElementById("viz");
+    viz.setAttribute("width", "1440"); viz.setAttribute("height", "780");
+    return true;
+  });
+  await new Promise((r) => setTimeout(r, 300));
+  rects.select = await rect("#run-select");
   rects.scrub = await rect("#scrub");
   await at(s3 + 0.5);
   rects.drop = await rect(".drop");
@@ -202,7 +226,7 @@ async function buildEndCard(len) {
     <div style="margin-top:30px">${chips}</div>
     <div style="margin-top:30px;font-size:27px;font-weight:600">A finding publishes only after it survives the <span style="color:#E53935">proof gate</span>.</div>
     <div style="margin-top:36px;font-size:22px;color:#6ee7ff;border:2px solid #6ee7ff55;border-radius:12px;padding:12px 24px;display:inline-block;background:#0b1220cc">https://mkultra00.github.io/swarm-visualizer/tutorial.html</div>
-    <div style="margin-top:26px;font-size:14px;color:#8b97a8">Sanitized logs · no live attacks · narration: gemini-3.8-flash-tts (Puck) · Gemini 4 NYC</div>
+    <div style="margin-top:26px;font-size:14px;color:#8b97a8">Sanitized logs · no live attacks · narration: mixed TTS voices (Gemini + macOS say — see captions) · Gemini 4 NYC</div>
   </div></body></html>`;
   const b = await puppeteer.launch({ executablePath: CHROME, headless: true });
   const p = await b.newPage();
@@ -227,7 +251,7 @@ async function assemble() {
   lines.push(`file '${path.join(TMP_DIR, "frames", frames.at(-1).file)}'`);
   fs.writeFileSync(path.join(TMP_DIR, "frames.txt"), lines.join("\n"));
   // 2. Time-gated highlights: colored chips (the color tour) + cyan UI markers.
-  const S = 1.5;
+  const S = 1.0; // screencast output is 1:1 with CSS pixels at dpr 2 / 1920 width
   const box = (r, a, b, color, t = 5) => {
     if (!r) return "";
     const [x, y, w, h] = r.map((v) => Math.round(v * S));
