@@ -64,3 +64,17 @@ test("self-check: the content scan does fire", () => {
   const s = J("x 192.0", ".2.1 y");
   assert.ok(CONTENT.find(([r]) => r === "ipv4")[1].test(s));
 });
+
+test("browser files never mention model keys or TTS/LLM hosts", () => {
+  const ban = /GEMINI_API_KEY|generativelanguage|XAI_API_KEY|ELEVENLABS_API_KEY|api\.x\.ai|api\.elevenlabs\.io/i;
+  for (const f of ["index.html", "tutorial.html", "app.js", "analyzer.js", "viz-model.js", "styles.css"]) {
+    assert.doesNotMatch(read(f), ban, f);
+  }
+  const narr = read("tools/narrate.mjs");
+  assert.match(narr, /process\.env\.ELEVENLABS_API_KEY/);
+  assert.doesNotMatch(narr, /AIza/);
+  assert.doesNotMatch(narr, /console\.log\([^)]*KEY/);
+  const cls = read("tools/classify.mjs");
+  assert.match(cls, /process\.env\.XAI_API_KEY/);
+  assert.doesNotMatch(cls, /console\.log\([^)]*KEY/);
+});

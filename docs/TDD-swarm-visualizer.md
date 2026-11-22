@@ -27,7 +27,7 @@ A public static website that loads **sanitized, after-run** swarm timelines (`ch
 2. **tabulates** every run in a first-class **table of outputs**, one row per run, with a link to that run's visualization (§4.7). **(rev 2)**
 3. **analyzes** each run: counts, duration, coverage, by-layer, by-agent, by-status, time-to-first-publish
 4. **briefs** each run in one paragraph built only from those numbers
-5. **narrates** each run after the fact in a **Gemini voice** (`gemini-3.8-live`). The audio is rendered locally from a numbers-only script and served as a static file. The voice explains the clip. It never claims to be the agent (§4.9). **(rev 2)**
+5. **narrates** each run after the fact in an **ElevenLabs voice** (`eleven_multilingual_v2`). The audio is rendered locally from a numbers-only script and served as a static file. The voice explains the clip. It never claims to be the agent (§4.9). **(rev 3)**
 6. **compares** a new Gemini run with past-LLM baselines on the same frame, including cost only when the run log carries it (§5.3–§5.5). **(rev 2, `[LIVE]`)**
 
 The attack engines stay on the lab Mac. This repo does not run, trigger or describe attacks.
@@ -56,9 +56,11 @@ dropped file  ───────┘  or FileReader            │
                                                  ▲
 media/narration/<id>.json + .wav ── same-origin GET (rev 2)
         ▲
-        └── tools/narrate.mjs  (LOCAL ONLY, reads GEMINI_API_KEY from env,
+        └── tools/narrate.mjs  (LOCAL ONLY, reads ELEVENLABS_API_KEY from env,
                                 sends only the narration script text, writes
                                 the sidecar + audio; never runs in the browser)
+        └── tools/classify.mjs (LOCAL ONLY, reads XAI_API_KEY from env,
+                                sends numbers only to grok-4.6)
 ```
 
 - `[DECISION]` Split the stub's `app.js` into two pure modules (`analyzer.js`, `viz-model.js`) plus a thin DOM layer (`app.js`). The pure modules are tested in Node. The canvas drawing isn't unit-tested; its geometry comes from `viz-model.js`, which is.
@@ -71,7 +73,7 @@ media/narration/<id>.json + .wav ── same-origin GET (rev 2)
   })(typeof self !== "undefined" ? self : this, function () { /* ... */ return { ... }; });
   ```
   No bundler and no ES-module import maps, because classic scripts work the same in every browser and in Node.
-- `[DECISION]` **(rev 2)** The Gemini API is called **only** from `tools/narrate.mjs` on the operator's machine. The browser never calls any model, holds any key, or opens a socket. "Optional Live API only when a key is local" from the addendum is met by running the Live API in that local tool, not in the page.
+- `[DECISION]` **(rev 3)** Grok (`grok-4.6`) and ElevenLabs are called **only** from `tools/classify.mjs` / `tools/narrate.mjs` on the operator's machine. The browser never calls any model, holds any key, or opens a socket.
 - `[DECISION]` **(rev 2)** The default visualization stays the **canvas** layered swarm. Gource or WebGL rendering stays optional and needs an explicit go-ahead (T29). Narration and caption contracts apply to whichever clip is shown.
 
 ### Stack
@@ -82,8 +84,8 @@ media/narration/<id>.json + .wav ── same-origin GET (rev 2)
 | Tests | `node:test` + `node:assert/strict` (Node ≥ 20). **No npm dependencies.** |
 | DOM tests | None in v1. `[DECISION]` DOM behavior is limited to glue code. It's covered by a static check (no `innerHTML` in `app.js`) and a `[VERIFY]` manual checklist (§6.3). |
 | Runtime network | Same-origin GETs of `data/manifest.json`, `data/runs/*.json` and **(rev 2)** `media/narration/*.json` / `*.wav` only. No CDNs, fonts, analytics or API calls. |
-| Secrets | None in the repo. No `.env`, no API keys, nothing in `localStorage`. **(rev 2)** `GEMINI_API_KEY` exists only in the operator's shell environment when they run `tools/narrate.mjs`. It is never written to disk by the tool, never committed and never shipped to the browser. |
-| Narration voice **(rev 2)** | `gemini-3.8-live` via the Gemini Live API, called from `tools/narrate.mjs` (Node ≥ 20, built-in `fetch`/`WebSocket`, no npm deps). `[VERIFY]` the exact model id string and that it returns audio for a text-only turn. `[LIVE]` until then. |
+| Secrets | None in the repo. No `.env`, no API keys, nothing in `localStorage`. **(rev 3)** `XAI_API_KEY` and `ELEVENLABS_API_KEY` exist only in the operator's shell environment when they run the local tools. They are never written to disk by the tools, never committed and never shipped to the browser. |
+| Narration voice **(rev 3)** | `eleven_multilingual_v2` via the ElevenLabs TTS API, called from `tools/narrate.mjs` (Node ≥ 20, built-in `fetch`, no npm deps). Audio is PCM 24 kHz wrapped as WAV. |
 
 - `[GAP]` The README says "Open `index.html`". Under `file://`, `fetch("data/manifest.json")` fails in Chrome and Firefox. Supported paths are `python3 -m http.server` or GitHub Pages. Drop-JSON still works under `file://` because it uses `FileReader`. Task T15 adds a visible message when the manifest fetch fails.
 
@@ -512,7 +514,7 @@ The narration is an after-run explanation of the clip. It is not a live hunt and
 ```json
 { "schema": "swarm-visualizer/narration/v1",
   "run_id": "6bec75ed",
-  "voice_model": "gemini-3.8-live",
+  "voice_model": "eleven_multilingual_v2",
   "script_text": "<exact narrationScript output>",
   "script_sha256": "<hex of script_text, UTF-8>",
   "audio": "media/narration/6bec75ed.wav",
@@ -529,18 +531,18 @@ The narration is an after-run explanation of the clip. It is not a live hunt and
 
 - A "Play with narration" button appears only when the selected **manifest** entry has a sidecar (fetched with a same-origin GET; a 404 means no button). It starts the audio and the scrub from 0 with `playMs = duration_ms`. Pause pauses both. Scrubbing by hand stops the audio.
 - A transcript panel shows `script_text` via `textContent`.
-- The credit line, outside the canvas and outside the HUD, is exactly: `Narrator voice: gemini-3.8-live, reading the numbers above after the run. The narrator did not run this exam.`
+- The credit line, outside the canvas and outside the HUD, is exactly: `Narrator voice: eleven_multilingual_v2, reading the numbers above after the run. The narrator did not run this exam.`
 - `[DECISION]` My reading of "do not stamp Gemini on glm/oss clips": the HUD, the canvas caption, the table row, the brief and the spoken script never say Gemini for a baseline run. The narrator credit is allowed because it names the narrator, and it sits in the narration control, clearly separate from AGENT LLM. If Frank reads it more strictly, move the credit to the README/about text only. That's a one-line change, and T25 keeps the other checks.
 - `[CONTRACT]` The script names the **real worker id** (`glm-5.3:cloud`, `gpt-oss:20b`), never the narrator.
 
 **Local render tool** `tools/narrate.mjs` (operator machine only):
 
-- Usage: `GEMINI_API_KEY=… node tools/narrate.mjs <run-id>` (the key comes from the shell or a gitignored `.env` that the operator sources; the tool never reads files for keys).
-- It loads the manifest entry and run file, runs `validateTimeline` and computes `narrationScript`. It sends **only** `script_text` to `gemini-3.8-live`, with a fixed instruction to read the text verbatim and add nothing. It writes the audio as WAV plus the sidecar.
-- `[CONTRACT]` The tool reads the key only from `process.env.GEMINI_API_KEY`. It never logs, prints or writes the key and never puts it in a URL that gets logged. It refuses to run if the run fails the gate.
+- Usage: `ELEVENLABS_API_KEY=… node tools/narrate.mjs <run-id>` (the key comes from the shell or a gitignored `.env` that the operator sources; the tool never reads files for keys).
+- It loads the manifest entry and run file, runs `validateTimeline` and computes `narrationScript`. It sends **only** `script_text` to ElevenLabs `eleven_multilingual_v2`, with a fixed instruction to read the text verbatim and add nothing. It writes the audio as WAV plus the sidecar.
+- `[CONTRACT]` The tool reads the key only from `process.env.ELEVENLABS_API_KEY`. It never logs, prints or writes the key and never puts it in a URL that gets logged. It refuses to run if the run fails the gate.
 - `[VERIFY]` Listen to each clip and check it reads the transcript verbatim with no added words. A model can drift. If it adds words, re-render or drop the clip.
 - `[LIVE]` No sidecar exists until someone with a local key runs the tool. Until then, the overlay button doesn't appear, and the page works as before.
-- `[GAP]` T8's "no `fetch(` to an absolute http URL in `*.js`" rule must not be weakened. `tools/narrate.mjs` uses the `.mjs` extension, and T24 adds a separate rule: only `tools/narrate.mjs` may reference the Gemini API host or `GEMINI_API_KEY`, and no browser-loaded file may.
+- `[GAP]` T8's "no `fetch(` to an absolute http URL in `*.js`" rule must not be weakened. `tools/narrate.mjs` uses the `.mjs` extension, and T24 adds a separate rule: only local tools may reference `api.elevenlabs.io` / `api.x.ai` or the env key names, and no browser-loaded file may.
 
 ---
 
@@ -688,7 +690,8 @@ docs/TDD-swarm-visualizer.md
 | One file | `node --test tests/analyze.test.js` |
 | Serve locally | `python3 -m http.server 8767`, then open `http://127.0.0.1:8767/` |
 | Node version | `node --version` → ≥ v20 |
-| Render narration **(rev 2, local only)** | `GEMINI_API_KEY=… node tools/narrate.mjs 6bec75ed` |
+| Render narration **(rev 3, local only)** | `ELEVENLABS_API_KEY=… node tools/narrate.mjs 6bec75ed` |
+| Render class **(rev 3, local only)** | `XAI_API_KEY=… node tools/classify.mjs 6bec75ed` |
 
 Manual checklist `[VERIFY]`, run after T15, T16, T22, T25 and T27:
 
@@ -703,7 +706,7 @@ Manual checklist `[VERIFY]`, run after T15, T16, T22, T25 and T27:
 9. **(rev 2)** The viz is the first thing on screen. The "What you're seeing" text sits right below it and reads as plain language.
 10. **(rev 2)** The runs table has 5 rows in manifest order. The crAPI row reads `crAPI · crapi-1 · 6bec75ed · 33 · 8 · 838.9 · 132.8 · 7 · 0 · gpt-oss:20b`, and its usd cells are empty (or `$0 API (compute not billed)` once `billing:"local"` is in the manifest). Clicking `view` opens `#run=6bec75ed` and shows the crAPI viz. Reloading with that hash opens crAPI directly.
 11. **(rev 2)** With a rendered sidecar for crAPI: "Play with narration" appears. Voice and clip end together. The transcript matches the §3.7 golden. The spoken worker id is `gpt-oss:20b`. The HUD, caption and table row show no "Gemini". The credit line is outside the canvas. Without a sidecar, there's no button and no console error beyond the 404.
-12. **(rev 2)** `git grep -n GEMINI_API_KEY` lists only `tools/narrate.mjs`, the README run note and this doc. `git grep -nE 'AIza[0-9A-Za-z_-]{35}'` finds nothing.
+12. **(rev 3)** `git grep -nE 'XAI_API_KEY|ELEVENLABS_API_KEY'` lists only local tools, the README run note and this doc. `git grep -nE 'AIza[0-9A-Za-z_-]{35}'` finds nothing.
 13. **(rev 2)** Compare (after T27): each frame's fair table shows empty Gemini cells and "No Gemini run on <frame> yet." No usd figure appears that isn't in a log or a `billing:"local"` entry.
 
 ---
@@ -1013,7 +1016,7 @@ T18–T22 can start as soon as T16 is green. They don't need T17, except that T2
   - for each `media/narration/*.json` (zero files is a pass): the schema is `swarm-visualizer/narration/v1`; `run_id` is in the manifest; `audio` exists under `media/narration/` with no `..` and is ≤ 3 MB; `duration_ms` is an integer within [1000, 120000]; `script_text === narrationScript(...)` for the current run file; `script_sha256` matches (`node:crypto`); the sidecar passes the §2.3 scan
   - a hand-built stale sidecar in a temp dir (script for a different run) → the checker reports `stale-script`. Export the checker as `checkNarrationSidecar(sidecar, manifest, runFile)` from `analyzer.js`, a pure function, so it's testable without fixtures in `media/`
   - data-gate: no manifest `llm` equals `"gemini-3.8-live"` (the narrator id, §2.2)
-  - hygiene: `GEMINI_API_KEY` and the Gemini API host (`generativelanguage`) appear in no file loaded by `index.html` and in no file except `tools/narrate.mjs`, `README.md` and this doc. `tools/narrate.mjs` contains `process.env.GEMINI_API_KEY` and doesn't contain `AIza`, `console.log(` with `KEY` or `writeFile` with `KEY`. `media/narration/*.wav` is skipped from the content scan (§6.2)
+  - hygiene: `XAI_API_KEY`, `ELEVENLABS_API_KEY`, `api.x.ai` and `api.elevenlabs.io` appear in no file loaded by `index.html`. Tools read `process.env.XAI_API_KEY` / `process.env.ELEVENLABS_API_KEY` and don't contain `AIza`, `console.log(` with `KEY` or `writeFile` with `KEY`. `media/narration/*.wav` is skipped from the content scan (§6.2)
   - `viz-model.js` `narrationPlayMs`: a valid sidecar → `duration_ms`; missing or invalid → 8000
 - Fail: `checkNarrationSidecar is not a function`
 - Implement: `analyzer.js` `checkNarrationSidecar`; `viz-model.js` `narrationPlayMs`; `tools/narrate.mjs` (§4.9: validate → script → Live API with the env key → WAV + sidecar); a `media/narration/.gitkeep`; a README note on running it locally.

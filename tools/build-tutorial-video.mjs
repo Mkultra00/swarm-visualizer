@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Builds media/tutorial-explainer.mp4: the REAL app is the screen — live headless-Chromium capture
 // of swarm-visualizer with the run playing, plus the five stage-color chips flashing in sync with
-// Gemini flash-tts narration. No text slides, no blurred gource backdrop.
-// Usage: node tools/build-tutorial-video.mjs tts|capture|assemble|all   (app served on 127.0.0.1:8768)
-// The Gemini key is read at runtime from ~/.hermes/.env and never written anywhere.
+// ElevenLabs narration. No text slides, no blurred gource backdrop.
+// Usage: node tools/build-tutorial-video.mjs tts|capture|assemble|all   (app served on localhost:8768)
+// The ElevenLabs key is read at runtime from env / ~/.hermes/.env and never written anywhere.
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -15,7 +15,7 @@ const TMP_DIR = "/Users/franky/.hermes/cache/scratch/tutorial-video-build";
 const PUP_DIR = "/Users/franky/.hermes/cache/scratch/claude-demo-build";
 const FFMPEG = "/Users/franky/.hermes/tools/ffmpeg-9.0.1-darwin-arm64/ffmpeg";
 const CHROME = "/Users/franky/.hermes/tools/chromium-1208/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
-const URL_BASE = "http://127.0.0.1:8768/";
+const URL_BASE = "http://localhost:8768/";
 const OUT = path.join(ROOT, "media/tutorial-explainer.mp4");
 const MAX_TOTAL = 60.0;
 fs.rmSync(TMP_DIR, { recursive: true, force: true });
@@ -38,10 +38,11 @@ export const SCENES = [
   { id: "s5", text: "Five colors. One rule. A finding publishes only after it survives the proof gate." },
 ];
 
-function loadGeminiKey() {
+function loadElevenKey() {
+  if (process.env.ELEVENLABS_API_KEY) return process.env.ELEVENLABS_API_KEY;
   try {
     for (const line of fs.readFileSync("/Users/franky/.hermes/.env", "utf8").split(/\r?\n/)) {
-      const m = line.match(/^(?:GEMINI_API_KEY|GOOGLE_API_KEY)=["']?([^"'\s#]+)["']?/);
+      const m = line.match(/^ELEVENLABS_API_KEY=["']?([^"'\s#]+)["']?/);
       if (m) return m[1];
     }
   } catch {}
@@ -57,24 +58,20 @@ function writeWav(pcm, out, rate = 24000) {
 }
 
 async function synthVoice(text, wav, key) {
-  for (const model of ["gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"]) {
-    if (!key) break;
+  if (key) {
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      const url = new URL("/v1/text-to-speech/UgBBYS2sOqTuMpoF3BR0", "https://api.elevenlabs.io");
+      url.searchParams.set("output_format", "pcm_24000");
+      const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text }] }],
-          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } } },
-        }),
+        headers: { "Content-Type": "application/json", Accept: "application/octet-stream", "xi-api-key": key },
+        body: JSON.stringify({ text, model_id: "eleven_multilingual_v2" }),
       });
-      if (!res.ok) { console.log(`TTS ${model} HTTP ${res.status}`); continue; }
-      const inline = (await res.json())?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
-      if (!inline?.inlineData?.data) { console.log(`TTS ${model} no audio`); continue; }
-      const raw = Buffer.from(inline.inlineData.data, "base64");
-      if (raw.subarray(0, 4).toString("ascii") === "RIFF") fs.writeFileSync(wav, raw); else writeWav(raw, wav);
-      return model;
-    } catch (e) { console.log(`TTS ${model} error ${e.message}`); }
+      if (res.ok) {
+        const pcm = Buffer.from(await res.arrayBuffer());
+        if (pcm.length) { writeWav(pcm, wav); return "eleven_multilingual_v2"; }
+      } else console.log("TTS elevenlabs HTTP " + res.status);
+    } catch (e) { console.log("TTS elevenlabs error " + e.message); }
   }
   const aiff = wav.replace(/\.wav$/, ".aiff");
   execFileSync("say", ["-r", "178", "-o", aiff, text]);
@@ -85,7 +82,7 @@ async function synthVoice(text, wav, key) {
 const wavSec = (f) => { const b = fs.readFileSync(f); return (b.length - 44) / b.readUInt32LE(28); };
 
 async function tts() {
-  const key = loadGeminiKey();
+  const key = loadElevenKey();
   const engines = {};
   for (const s of SCENES) {
     const wav = path.join(TMP_DIR, `${s.id}.wav`);
@@ -96,7 +93,8 @@ async function tts() {
 }
 
 function sceneLens() {
-  const pad = { s1: 0.8, s2: 0.8, s3: 0.9, s4: 0.7, s5: 1.8 };
+  // ElevenLabs Mark runs longer than Gemini TTS; keep total ≤ 60s.
+  const pad = { s1: 0.7, s2: 0.4, s3: 0.7, s4: 0.5, s5: 0.9 };
   return Object.fromEntries(SCENES.map((s) => [s.id, +(wavSec(path.join(TMP_DIR, `${s.id}.wav`)) + pad[s.id]).toFixed(2)]));
 }
 
@@ -226,7 +224,7 @@ async function buildEndCard(len) {
     <div style="margin-top:30px">${chips}</div>
     <div style="margin-top:30px;font-size:27px;font-weight:600">A finding publishes only after it survives the <span style="color:#E53935">proof gate</span>.</div>
     <div style="margin-top:36px;font-size:22px;color:#6ee7ff;border:2px solid #6ee7ff55;border-radius:12px;padding:12px 24px;display:inline-block;background:#0b1220cc">https://mkultra00.github.io/swarm-visualizer/tutorial.html</div>
-    <div style="margin-top:26px;font-size:14px;color:#8b97a8">Sanitized logs · no live attacks · narration: mixed TTS voices (Gemini + macOS say — see captions) · Gemini 4 NYC</div>
+    <div style="margin-top:26px;font-size:14px;color:#8b97a8">Sanitized logs · no live attacks · narration: ElevenLabs Mark · Gemini 4 NYC</div>
   </div></body></html>`;
   const b = await puppeteer.launch({ executablePath: CHROME, headless: true });
   const p = await b.newPage();

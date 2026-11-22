@@ -13,8 +13,8 @@ This project does **not** perform a pentest, and it does **not** run the agentic
 - The simulation runs are built on **two other open-source repos, forked privately** — e.g. **ARTEX** ([BaaRai/ARTEX](https://github.com/BaaRai/ARTEX), AI autonomous pentest system) and **Pentest-Swarm-AI** ([Armur-Ai/Pentest-Swarm-AI](https://github.com/Armur-Ai/Pentest-Swarm-AI), swarm orchestrator). Those forked repos are **private**, so they are not hosted here.
 - A full simulation run takes **hours**. Nothing in this repo launches or replays live attacks — the engines stay on the offline lab machine.
 - The **front-end visualizer and analyzer** (this entire repo) were **built during the hackathon**.
-- Gemini models were used **inside the simulation, offline, only to get the data** that is fed to the analyzer — sanitized timelines exported to `data/runs/*.json`. No model calls happen in the browser.
-- Narration on the demo and tutorial videos also uses the **Gemini voice model** (generated at build time, spoken audio only). The demo reads `gemini-3.8-flash-tts` (voice Puck). The rebuilt tutorial video mixes models: most segments fell back to `gemini-2.5-flash-preview-tts` after build-time rate limits (429), with `gemini-3.8-flash-tts` (Puck) on the closing segment.
+- Sample timelines in `data/runs/*.json` come from lab workers (`glm-5.3:cloud`, `gpt-oss:20b`). No model calls happen in the browser.
+- Narration on the demo and tutorial videos uses **ElevenLabs** (`eleven_multilingual_v2`, voice Mark) generated at build time. Spoken audio only.
 
 ## What it is
 
@@ -23,8 +23,8 @@ Pick a sample (or drop a `chan-sim-timeline/v1` JSON). The page:
 1. **Visualizes** the run as a Gource tree clip (FRAME / RUN / AGENT LLM HUD)
 2. **Tables** one row per sample (events, window, coverage, class, cost)
 3. **Briefs** one paragraph from the numbers — no payloads, no how-to
-4. **Narrates** with a Gemini TTS sidecar when present (`gemini-3.8-flash-tts`)
-5. **Classifies** the numbers with Gemini Decisions (`gemini-decision-1`)
+4. **Narrates** with an ElevenLabs TTS sidecar when present (`eleven_multilingual_v2`)
+5. **Classifies** the numbers with Grok (`grok-4.6`) after the run
 
 No server. No API keys in the browser. Offline after load.
 
@@ -38,7 +38,7 @@ No server. No API keys in the browser. Offline after load.
 | Juice Shop | juiceshop | `7eaf9541` | `gpt-oss:20b` |
 | crAPI | crapi-1 | `6bec75ed` | `gpt-oss:20b` |
 
-HUD LLM is the worker **from that run's log**. Do not stamp Gemini on these baselines. Gemini vs past-LLM columns stay empty until a Carbon / Hydrogen after-run lands.
+HUD LLM is the worker **from that run's log**. Do not stamp Grok or ElevenLabs on these baselines. Gemini vs past-LLM columns stay empty until a Carbon / Hydrogen after-run lands.
 
 ## Honest limits
 
@@ -46,7 +46,7 @@ HUD LLM is the worker **from that run's log**. Do not stamp Gemini on these base
 - Layer plot is not cause-and-effect between agents.
 - `usd` is empty unless the log carries tokens/cost. We do not invent prices.
 - Narrator voice ≠ agent LLM. Credit sits outside the HUD.
-- `gemini-3.8-live` is websocket-only. Site wavs are **flash-tts**.
+- Site wavs are **ElevenLabs PCM wrapped as WAV**.
 - Attack stack does **not** live here.
 
 ## Run locally
@@ -63,8 +63,8 @@ node --test tests/*.test.js
 Optional (operator machine, env key only — never commit `.env`):
 
 ```bash
-GEMINI_API_KEY=… node tools/classify.mjs 6bec75ed
-GEMINI_API_KEY=… node tools/narrate.mjs 6bec75ed
+XAI_API_KEY=… node tools/classify.mjs 6bec75ed
+ELEVENLABS_API_KEY=… node tools/narrate.mjs 6bec75ed
 ```
 
 ## Layout
@@ -72,8 +72,8 @@ GEMINI_API_KEY=… node tools/narrate.mjs 6bec75ed
 - `index.html` / `styles.css` / `app.js` — static site
 - `analyzer.js` / `viz-model.js` — numbers + canvas model
 - `data/manifest.json` + `data/runs/*.json` — sanitized samples
-- `media/class/` / `media/narration/` — Gemini class + wav sidecars
-- `tools/` — local-only Gemini render
+- `media/class/` / `media/narration/` — Grok class + wav sidecars
+- `tools/` — local-only Grok classify + ElevenLabs render
 - `docs/TDD-swarm-visualizer.md` — tests T0–T29
 
 ## License

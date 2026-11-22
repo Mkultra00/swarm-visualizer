@@ -1,10 +1,10 @@
 {
   "schema": "swarm-visualizer/narration/v1",
   "run_id": "7b5ee689",
-  "voice_model": "gemini-3.8-flash-tts",
+  "voice_model": "eleven_multilingual_v2",
   "script_text": "Vault Notes, vaultnotes-7. This is an after-run replay of a lab exam, not a live attack. The agent LLM for this run was glm-5.3:cloud. 8 agents produced 2258 events over a 1501-second window. Each row is one agent; each column is a stage, from human on the left to publish on the right. Most activity was in the proven-gate stage, with 2141 events. The first publish came 148 seconds in. Coverage: 15 endpoints, 18 findings, 0 verified. Nearby dots are not proof that the agents coordinated.",
   "script_sha256": "7eb446022e3b8c04c8086815c89b1183b67660f040afce2feafa6e70d436349f",
   "audio": "media/narration/7b5ee689.wav",
-  "duration_ms": 43440,
-  "rendered_at": "2026-11-21T18:03:21.135Z"
+  "duration_ms": 41146,
+  "rendered_at": "2026-11-22T11:20:04.257Z"
 }

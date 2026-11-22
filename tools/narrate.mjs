@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * Local-only narrator. GEMINI_API_KEY from env. Never prints the key.
- * gemini-3.8-live is websocket-only (bidiGenerateContent). This tool renders
- * audio with gemini-3.8-flash-tts generateContent so the site has a wav.
- * Usage: GEMINI_API_KEY=… node tools/narrate.mjs <run-id>
+ * Local-only narrator. ELEVENLABS_API_KEY from env. Never prints the key.
+ * Renders audio with ElevenLabs TTS so the site has a wav.
+ * Usage: ELEVENLABS_API_KEY=… node tools/narrate.mjs <run-id>
  */
 import { createRequire } from "node:module";
 import fs from "node:fs";
@@ -16,10 +15,30 @@ const V = require("../viz-model.js");
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ROOT = path.join(__dirname, "..");
-const HOST = "generativelanguage.googleapis.com";
-const MODEL = "gemini-3.8-flash-tts";
+const HOST = "api.elevenlabs.io";
+const MODEL = "eleven_multilingual_v2";
+const VOICE = "UgBBYS2sOqTuMpoF3BR0";
+const RATE = 24000;
 
 function die(msg) { console.error(msg); process.exit(1); }
+
+function pcmToWav(pcm) {
+  const h = Buffer.alloc(44);
+  h.write("RIFF", 0);
+  h.writeUInt32LE(36 + pcm.length, 4);
+  h.write("WAVE", 8);
+  h.write("fmt ", 12);
+  h.writeUInt32LE(16, 16);
+  h.writeUInt16LE(1, 20);
+  h.writeUInt16LE(1, 22);
+  h.writeUInt32LE(RATE, 24);
+  h.writeUInt32LE(RATE * 2, 28);
+  h.writeUInt16LE(2, 32);
+  h.writeUInt16LE(16, 34);
+  h.write("data", 36);
+  h.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([h, pcm]);
+}
 
 function wavDurationMs(buf) {
   if (!Buffer.isBuffer(buf) || buf.length < 44) return 8000;
@@ -30,8 +49,8 @@ function wavDurationMs(buf) {
 }
 
 async function main() {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) die("GEMINI_API_KEY missing");
+  const key = process.env.ELEVENLABS_API_KEY;
+  if (!key) die("ELEVENLABS_API_KEY missing");
   const id = process.argv[2];
   if (!id) die("usage: node tools/narrate.mjs <run-id>");
   const man = JSON.parse(fs.readFileSync(path.join(ROOT, "data/manifest.json"), "utf8"));
@@ -44,23 +63,21 @@ async function main() {
   const analysis = A.analyze(v.run, hud.llm);
   const metrics = A.runMetrics(v.run, analysis);
   const script_text = A.narrationScript(analysis, metrics);
-  const url = new URL(`/v1beta/models/${MODEL}:generateContent`, `https://${HOST}`);
+  const url = new URL(`/v1/text-to-speech/${VOICE}`, `https://${HOST}`);
+  url.searchParams.set("output_format", "pcm_24000");
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: script_text }] }],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
-      },
-    }),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/octet-stream",
+      "xi-api-key": key,
+    },
+    body: JSON.stringify({ text: script_text, model_id: MODEL }),
   });
-  if (!res.ok) die("gemini voice http " + res.status);
-  const body = await res.json();
-  const inline = body?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
-  if (!inline || !inline.inlineData.data) die("no audio in response");
-  const buf = Buffer.from(inline.inlineData.data, "base64");
+  if (!res.ok) die("elevenlabs voice http " + res.status);
+  const pcm = Buffer.from(await res.arrayBuffer());
+  if (!pcm.length) die("no audio in response");
+  const buf = pcmToWav(pcm);
   const dir = path.join(ROOT, "media/narration");
   fs.mkdirSync(dir, { recursive: true });
   const wavRel = `media/narration/${id}.wav`;

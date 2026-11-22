@@ -1,10 +1,10 @@
 {
   "schema": "swarm-visualizer/narration/v1",
   "run_id": "6bec75ed",
-  "voice_model": "gemini-3.8-flash-tts",
+  "voice_model": "eleven_multilingual_v2",
   "script_text": "crAPI, crapi-1. This is an after-run replay of a lab exam, not a live attack. The agent LLM for this run was gpt-oss:20b. 8 agents produced 33 events over a 839-second window. Each row is one agent; each column is a stage, from human on the left to publish on the right. Most activity was in the proven-gate stage, with 17 events. The first publish came 133 seconds in. Coverage: 7 endpoints, 1 finding, 0 verified. Nearby dots are not proof that the agents coordinated.",
   "script_sha256": "c6bc55ea21264fd0a543377f386ae147a06bc75450a936c2791b1d9c364c1123",
   "audio": "media/narration/6bec75ed.wav",
-  "duration_ms": 35400,
-  "rendered_at": "2026-11-21T18:03:54.535Z"
+  "duration_ms": 37988,
+  "rendered_at": "2026-11-22T11:19:59.095Z"
 }

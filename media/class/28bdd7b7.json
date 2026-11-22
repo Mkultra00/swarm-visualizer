@@ -1,7 +1,7 @@
 {
   "schema": "swarm-visualizer/class/v1",
   "run_id": "28bdd7b7",
-  "model": "gemini-decision-1",
+  "model": "grok-4.6",
   "label": "reached",
-  "reason": "choice reached 0.97"
+  "reason": "Endpoints reached with zero verified findings"
 }
